@@ -1,15 +1,16 @@
 
 {
   "name": "cass-ai",
-  "version": "1.0.0",
-  "description": "CASS AI Discord Bot powered by Gemini",
+  "version": "2.0.0",
+  "description": "CASS AI Discord Bot powered by GPT",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.19.3",
-    "@google/genai": "^1.30.0",
+    "openai": "latest",
     "dotenv": "^16.4.7"
   }
 }
+
