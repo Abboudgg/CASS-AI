@@ -54,10 +54,23 @@ client.on("messageCreate", async (message) => {
   try {
     await message.channel.sendTyping();
 
-    const response = await ai.models.generateContent({
+let response;
+
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
       contents: prompt
     });
+    break;
+  } catch (error) {
+    if (attempt === 3) throw error;
+
+    await new Promise(resolve =>
+      setTimeout(resolve, attempt * 2000)
+    );
+  }
+}
 
     const answer = response.text || "ما قدرت أطلع إجابة.";
 
