@@ -150,17 +150,24 @@
     }
   }
 
-  async function setStatus(status, button) {
-    alert("سيتم تفعيل التحكم بعد ربط الخادم.");
-  }
+  async function savePersonality() {
+  const personality = document.getElementById("personality").value.trim();
 
-  function setPlaying() {
-    alert("سيتم تفعيل Playing بعد ربط الخادم.");
-  }
+  try {
+    const response = await fetch("/api/personality", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personality })
+    });
 
-  function savePersonality() {
-    alert("سيتم تفعيل حفظ الشخصية بعد ربط الخادم.");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+
+    alert("تم حفظ شخصية كاس Ai!");
+  } catch (error) {
+    alert("تعذر الحفظ: " + error.message);
   }
+}
 
   refresh();
   setInterval(refresh, 10000);
