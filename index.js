@@ -1,21 +1,20 @@
 
 const http = require("http");
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("CASS AI شغال !");
-});
-
-server.listen(process.env.PORT || 3000, "0.0.0.0");
-
 const {
   Client,
   GatewayIntentBits,
   Partials
 } = require("discord.js");
 
-const { GoogleGenAI } = require("@google/genai");
+const OpenAI = require("openai");
 require("dotenv").config();
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("CASS AI is alive!");
+});
+
+server.listen(process.env.PORT || 3000, "0.0.0.0");
 
 const client = new Client({
   intents: [
@@ -27,12 +26,12 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 client.once("ready", () => {
-  console.log(`✅ CASS AI is online as ${client.user.tag}`);
+  console.log(`✅ CASS AI GPT is online as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
@@ -54,32 +53,20 @@ client.on("messageCreate", async (message) => {
   try {
     await message.channel.sendTyping();
 
-let response;
-
-for (let attempt = 1; attempt <= 3; attempt++) {
-  try {
-    response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: prompt
+    const response = await openai.responses.create({
+      model: "gpt-5.4-mini",
+      instructions: "أنت CASS AI، مساعد ذكي وودود. أجب باللغة التي يستخدمها الشخص، وادعم العربية.",
+      input: prompt
     });
-    break;
-  } catch (error) {
-    if (attempt === 3) throw error;
 
-    await new Promise(resolve =>
-      setTimeout(resolve, attempt * 2000)
-    );
-  }
-}
-
-    const answer = response.text || "ما قدرت أطلع إجابة.";
+    const answer = response.output_text || "ما قدرت أطلع إجابة.";
 
     for (let i = 0; i < answer.length; i += 1900) {
       await message.reply(answer.slice(i, i + 1900));
     }
 
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("OpenAI Error:", error);
     await message.reply("عذراً، حصل خطأ أثناء الرد. حاول مرة ثانية.");
   }
 });
