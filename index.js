@@ -27,7 +27,12 @@ const client = new Client({
 });
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+  defaultHeaders: {
+    "HTTP-Referer": "https://cass-ai.onrender.com",
+    "X-Title": "CASS AI"
+  }
 });
 
 client.once("ready", () => {
