@@ -9,6 +9,7 @@ const {
 const OpenAI = require("openai");
 require("dotenv").config();
 
+// سيرفر Render
 const server = http.createServer((req, res) => {
   res.writeHead(200);
   res.end("CASS AI is alive!");
@@ -16,6 +17,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(process.env.PORT || 3000, "0.0.0.0");
 
+// إعداد بوت Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -26,6 +28,7 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
+// الاتصال بـ OpenRouter
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -35,10 +38,12 @@ const openai = new OpenAI({
   }
 });
 
+// عند تشغيل البوت
 client.once("ready", () => {
-  console.log(`✅ CASS AI GPT is online as ${client.user.tag}`);
+  console.log(`✅ CASS AI is online as ${client.user.tag}`);
 });
 
+// استقبال الرسائل
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
@@ -58,22 +63,33 @@ client.on("messageCreate", async (message) => {
   try {
     await message.channel.sendTyping();
 
-    const response = await openai.responses.create({
-      model: "gpt-5.4-mini",
-      instructions: "أنت CASS AI، مساعد ذكي وودود. أجب باللغة التي يستخدمها الشخص، وادعم العربية.",
-      input: prompt
+    const response = await openai.chat.completions.create({
+      model: "inclusionai/ling-3.2-flash:free",
+      messages: [
+        {
+          role: "system",
+          content: "أنت CASS AI، مساعد ذكي وودود. أجب باللغة التي يستخدمها الشخص، وادعم اللغة العربية."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
     });
 
-    const answer = response.output_text || "ما قدرت أطلع إجابة.";
+    const answer =
+      response.choices?.[0]?.message?.content ||
+      "ما قدرت أطلع إجابة.";
 
     for (let i = 0; i < answer.length; i += 1900) {
       await message.reply(answer.slice(i, i + 1900));
     }
 
   } catch (error) {
-    console.error("OpenAI Error:", error);
+    console.error("OpenRouter Error:", error);
     await message.reply("عذراً، حصل خطأ أثناء الرد. حاول مرة ثانية.");
   }
 });
 
+// تسجيل الدخول
 client.login(process.env.DISCORD_TOKEN);
