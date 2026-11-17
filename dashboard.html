@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CASS AI Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1020;
+      color: white;
+      padding: 25px;
+    }
+    .container { max-width: 900px; margin: auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    h1 { margin: 0; }
+    .logo { color: #8b9cff; }
+    .card {
+      background: #151d31;
+      border: 1px solid #27334e;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .status {
+      display: inline-block;
+      padding: 8px 15px;
+      border-radius: 20px;
+      background: #123d2c;
+      color: #55e6a5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    button {
+      background: #202b43;
+      border: 1px solid #354463;
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background: #344362; }
+    button.active {
+      border: 2px solid #8b9cff;
+      background: #29385c;
+    }
+    input {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: 1px solid #354463;
+      background: #0b1020;
+      color: white;
+      margin: 10px 0;
+    }
+    .save {
+      background: #5865f2;
+      width: 100%;
+      border: none;
+    }
+    .muted { color: #9ca9c4; }
+    @media(max-width:550px) {
+      body { padding: 15px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1 class="logo">CASS AI 🤖</h1>
+      <p class="muted">لوحة التحكم الرئيسية</p>
+    </div>
+    <span class="status" id="connection">جاري التحقق...</span>
+  </header>
+
+  <section class="card">
+    <h2>حالة الاتصال</h2>
+    <h3 id="botStatus">جاري التحميل...</h3>
+    <p class="muted" id="botDetails">انتظر قليلاً</p>
+  </section>
+
+  <section class="card">
+    <h2>تغيير حالة البوت</h2>
+    <div class="grid">
+      <button onclick="setStatus('online',this)">🟢 متصل</button>
+      <button onclick="setStatus('dnd',this)">🔴 مشغول</button>
+      <button onclick="setStatus('playing',this)">🎮 Playing</button>
+      <button onclick="setStatus('idle',this)">🌙 خامل</button>
+    </div>
+    <input id="gameName" placeholder="اسم اللعبة، مثال: Roblox">
+    <button class="save" onclick="setPlaying()">حفظ حالة Playing</button>
+  </section>
+
+  <section class="card">
+    <h2>شخصية CASS AI</h2>
+    <textarea id="personality" rows="4"
+      style="width:100%;padding:12px;border-radius:10px;background:#0b1020;color:white"
+      placeholder="اكتب شخصية البوت هنا"></textarea>
+    <button class="save" onclick="savePersonality()">حفظ الشخصية</button>
+  </section>
+
+  <section class="card">
+    <h2>إدارة البوت</h2>
+    <p class="muted">سيتم ربط أزرار الإدارة بالخادم في الخطوات القادمة.</p>
+    <div class="grid">
+      <button disabled>🔄 إعادة التشغيل</button>
+      <button disabled>⏹️ إيقاف البوت</button>
+    </div>
+  </section>
+
+  <footer class="muted" style="text-align:center">
+    CASS AI © 2026
+  </footer>
+</div>
+
+<script>
+  async function refresh() {
+    try {
+      const response = await fetch("/api/status");
+      if (!response.ok) throw new Error("Not ready");
+      const data = await response.json();
+
+      document.getElementById("connection").textContent =
+        data.connected ? "متصل" : "غير متصل";
+
+      document.getElementById("botStatus").textContent =
+        data.status || "غير معروف";
+
+      document.getElementById("botDetails").textContent =
+        data.activity || "لا يوجد نشاط";
+    } catch {
+      document.getElementById("connection").textContent =
+        "تعذر الاتصال";
+      document.getElementById("botStatus").textContent =
+        "لم يتم ربط الخادم بعد";
+    }
+  }
+
+  async function setStatus(status, button) {
+    alert("سيتم تفعيل التحكم بعد ربط الخادم.");
+  }
+
+  function setPlaying() {
+    alert("سيتم تفعيل Playing بعد ربط الخادم.");
+  }
+
+  function savePersonality() {
+    alert("سيتم تفعيل حفظ الشخصية بعد ربط الخادم.");
+  }
+
+  refresh();
+  setInterval(refresh, 10000);
+</script>
+</body>
+</html>
