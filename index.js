@@ -40,26 +40,39 @@ function sendJSON(res, data, code = 200) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.method === "GET" && req.url === "/") {
+  if ((req.method === "GET" || req.method === "HEAD") && req.url === "/") {
     const file = path.join(__dirname, "dashboard.html");
     fs.readFile(file, (err, content) => {
       if (err) {
         res.writeHead(500);
         return res.end("Dashboard file not found");
       }
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Length": content.length
+      });
+      if (req.method === "HEAD") return res.end();
       res.end(content);
     });
     return;
   }
 
-  if (req.method === "GET" && req.url === "/api/status") {
-    return sendJSON(res, {
+  if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/status") {
+    const data = {
       connected: client.isReady(),
       status: client.user?.presence?.status || "offline",
       activity: currentActivity,
       username: client.user?.tag || "CASS AI"
-    });
+    };
+    if (req.method === "HEAD") {
+      const body = JSON.stringify(data);
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": Buffer.byteLength(body)
+      });
+      return res.end();
+    }
+    return sendJSON(res, data);
   }
 
   if (req.method === "POST" &&
