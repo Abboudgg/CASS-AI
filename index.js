@@ -28,11 +28,57 @@ const client = new Client({
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
+  maxRetries: 0,
+  timeout: 45000,
   defaultHeaders: {
     "HTTP-Referer": "https://cass-ai.onrender.com",
     "X-Title": "CASS AI"
   }
 });
+
+const FREE_AI_MODEL = "openrouter/free";
+const AI_RETRY_DELAYS = [1500, 3000, 6000];
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function createFreeAIResponse(messages) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= AI_RETRY_DELAYS.length; attempt++) {
+    try {
+      return await openai.chat.completions.create({
+        model: FREE_AI_MODEL,
+        messages
+      });
+    } catch (error) {
+      lastError = error;
+      const status = error.status || error.code;
+
+      // Retry temporary rate limits, provider outages, and network/server errors.
+      const retryable =
+        status === 429 ||
+        status === 408 ||
+        status === 500 ||
+        status === 502 ||
+        status === 503 ||
+        status === 504 ||
+        error.code === "ECONNRESET" ||
+        error.code === "ETIMEDOUT";
+
+      if (!retryable || attempt === AI_RETRY_DELAYS.length) {
+        throw error;
+      }
+
+      const delay = AI_RETRY_DELAYS[attempt];
+      console.warn(
+        `⚠️ Free AI busy (attempt ${attempt + 1}/${AI_RETRY_DELAYS.length}); retrying in ${delay}ms.`
+      );
+      await wait(delay);
+    }
+  }
+
+  throw lastError;
+}
 
 function sendJSON(res, data, code = 200) {
   res.writeHead(code, { "Content-Type": "application/json; charset=utf-8" });
@@ -159,23 +205,30 @@ client.on("messageCreate", async message => {
   try {
     await message.channel.sendTyping();
 
-    const response = await openai.chat.completions.create({
-      model: "inclusionai/ling-3.2-flash:free",
-      messages: [
-        { role: "system", content: personality },
-        { role: "user", content: prompt }
-      ]
-    });
+    const response = await createFreeAIResponse([
+      { role: "system", content: personality },
+      { role: "user", content: prompt }
+    ]);
 
-    const answer =
-      response.choices?.[0]?.message?.content || "ما قدرت أطلع إجابة.";
+    const content = response.choices?.[0]?.message?.content;
+    const answer = typeof content === "string"
+      ? content
+      : Array.isArray(content)
+        ? content.map(part => part.text || "").join("")
+        : "ما قدرت أطلع إجابة.";
 
     for (let i = 0; i < answer.length; i += 1900) {
       await message.reply(answer.slice(i, i + 1900));
     }
   } catch (error) {
-    console.error("OpenRouter Error:", error);
-    await message.reply("عذراً، حصل خطأ أثناء الرد. حاول مرة ثانية.");
+    console.error("Free OpenRouter Error:", {
+      status: error.status,
+      code: error.code,
+      message: error.message
+    });
+    await message.reply(
+      "كاس مشغول حالياً بسبب ضغط على نماذج الذكاء الاصطناعي المجانية. جرّب بعد دقيقة ❤️"
+    );
   }
 });
 
